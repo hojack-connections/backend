@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "env": {
+    "WEB_TOKEN_SECRET": "@web-token-secret",
+    "DB_URI": "@db-uri",
+    "CLIENT_AWS_ACCESS_KEY_ID": "@client-aws-access-key-id",
+    "CLIENT_AWS_SECRET_ACCESS_KEY": "@client-aws-secret-access-key",
+    "MANDRILL_API_KEY": "@mandrill-api-key",
+    "CLIENT_AWS_REGION": "us-west-2"
+  },
+  "builds": [{ "src": "*/**.js", "use": "@now/node" }],
+  "routes": [
+    {
+      "src": "/users",
+      "dest": "/routes/user.js",
+      "methods": ["POST", "GET"]
+    }
+  ]
+}
