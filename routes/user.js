@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('../models/user');
-const connectMiddleware = require('../connectMiddleware');
+const mongoConnect = require('../middleware/mongoConnect');
 const bcrypt = require('bcrypt');
 const emailValidator = require('email-validator');
 const asyncHandler = require('express-async-handler');
@@ -9,7 +9,7 @@ const express = require('express');
 const app = express();
 
 app.use(bodyParser.json());
-app.use(connectMiddleware);
+app.use(mongoConnect);
 
 app.get('*', asyncHandler(getUser));
 app.post('*', asyncHandler(signup));
@@ -39,13 +39,8 @@ async function signup(req, res) {
     return;
   }
   const salt = await bcrypt.genSalt(10);
-  const hash = await bcrypt.hash(req.body.password, salt);
-  const created = await User.create({
-    firstname: req.body.firstname,
-    lastname: req.body.lastname,
-    passwordHash: hash,
-    email: req.body.email
-  });
+  const passwordHash = await bcrypt.hash(req.body.password, salt);
+  const created = await User.create({ ...req.body, passwordHash });
   res.json(created);
 }
 

@@ -1,5 +1,5 @@
 const User = require('../models/user');
-const connectMiddleware = require('../connectMiddleware');
+const mongoConnect = require('../middleware/mongoConnect');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
@@ -9,7 +9,7 @@ const express = require('express');
 const app = express();
 
 app.use(bodyParser.json());
-app.use(connectMiddleware);
+app.use(mongoConnect);
 
 app.post('*', asyncHandler(login));
 
