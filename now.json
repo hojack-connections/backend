@@ -13,11 +13,11 @@
     {
       "src": "/users",
       "dest": "/routes/user.js",
-      "methods": ["GET"]
+      "methods": ["GET", "POST"]
     },
     {
       "src": "/users/login",
-      "dest": "/routes/user.js",
+      "dest": "/routes/login.js",
       "methods": ["POST"]
     }
   ]
