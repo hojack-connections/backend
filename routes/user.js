@@ -54,14 +54,14 @@ async function signup(req, res) {
  **/
 async function getUser(req, res) {
   const users = await User.find({
-    email: req.body.email
+    email: req.query.email
   }).exec();
   if (users.length === 0) {
     res.status(404);
     res.send('Email not found.');
     return;
   }
-  return users[0];
+  res.json(users[0]);
 }
 
 module.exports = app;
