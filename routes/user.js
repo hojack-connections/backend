@@ -73,15 +73,16 @@ async function login(req, res) {
  * Retrieve a user by email
  **/
 async function getUser(req, res) {
-  const users = await User.find({
+  const user = await User.findOne({
     email: req.query.email
-  }).exec();
-  if (users.length === 0) {
+  }).lean().exec();
+  if (!user) {
     res.status(404);
     res.send('Email not found.');
     return;
   }
-  res.json(users[0]);
+  delete user.passwordHash;
+  res.json(user);
 }
 
 /**
