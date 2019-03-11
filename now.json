@@ -6,12 +6,13 @@
     "CLIENT_AWS_ACCESS_KEY_ID": "@client-aws-access-key-id",
     "CLIENT_AWS_SECRET_ACCESS_KEY": "@client-aws-secret-access-key",
     "MANDRILL_API_KEY": "@mandrill-api-key",
-    "CLIENT_AWS_REGION": "us-west-2"
+    "CLIENT_AWS_REGION": "us-west-2",
+    "CLIENT_BUCKET": "certifio"
   },
   "builds": [{ "src": "*/**.js", "use": "@now/node" }],
   "routes": [
     {
-      "src": "/(.*)",
+      "src": "(.*)",
       "dest": "/routes/index.js",
       "methods": ["GET", "POST", "DELETE"]
     }
