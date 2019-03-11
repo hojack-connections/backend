@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('../models/user');
+const Event = require('../models/event');
+const auth = require('../middleware/auth');
 const mongoConnect = require('../middleware/mongoConnect');
 const bcrypt = require('bcrypt');
 const emailValidator = require('email-validator');
@@ -11,8 +13,9 @@ const app = express();
 app.use(bodyParser.json());
 app.use(mongoConnect);
 
-app.get('*', asyncHandler(getUser));
-app.post('*', asyncHandler(signup));
+app.get('/users/events', auth, asyncHandler(events));
+app.get('/users', asyncHandler(getUser));
+app.post('/users', asyncHandler(signup));
 
 /**
  * Create a new User record and store in database
@@ -57,6 +60,16 @@ async function getUser(req, res) {
     return;
   }
   res.json(users[0]);
+}
+
+/**
+ * Load Event objects owned by authenticated user
+ **/
+async function events(req, res) {
+  const events = await Event.find({
+    user: req.user.id
+  }).exec();
+  res.json(events);
 }
 
 module.exports = app;

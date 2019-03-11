@@ -16,8 +16,18 @@
       "methods": ["GET", "POST"]
     },
     {
+      "src": "/users/events",
+      "dest": "/routes/user.js",
+      "methods": ["GET"]
+    },
+    {
       "src": "/users/login",
       "dest": "/routes/login.js",
+      "methods": ["POST"]
+    },
+    {
+      "src": "/events",
+      "dest": "routes/event.js",
       "methods": ["POST"]
     }
   ]
