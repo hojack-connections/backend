@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/user');
 const Event = require('../models/event');
 const auth = require('../middleware/auth');
+const jwt = require('jsonwebtoken');
 const mongoConnect = require('../middleware/mongoConnect');
 const bcrypt = require('bcrypt');
 const emailValidator = require('email-validator');
@@ -13,6 +14,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(mongoConnect);
 
+app.post('/users/login', asyncHandler(login));
 app.get('/users/events', auth, asyncHandler(events));
 app.get('/users', asyncHandler(getUser));
 app.post('/users', asyncHandler(signup));
@@ -45,6 +47,32 @@ async function signup(req, res) {
   const passwordHash = await bcrypt.hash(req.body.password, salt);
   const created = await User.create({ ...req.body, passwordHash });
   res.json(created);
+}
+
+/**
+ * Authenticate and generate a jsonwebtoken
+ **/
+async function login(req, res) {
+  const users = await User.find({
+    email: req.body.email
+  }).exec();
+  if (users.length === 0) {
+    res.status(400);
+    res.send('Email not found.');
+    return;
+  }
+  const isPasswordMatch = await bcrypt.compare(req.body.password, users[0].passwordHash);
+  if (!isPasswordMatch) {
+    res.status(401);
+    res.send('There was a problem authenticating.');
+    return;
+  }
+  const token = jwt.sign({
+    ...users[0],
+    // Overwrite the password hash and don't send to client
+    passwordHash: ''
+  }, process.env.WEB_TOKEN_SECRET);
+  res.json({ token });
 }
 
 /**
