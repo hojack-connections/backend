@@ -1,8 +1,7 @@
-const express = require('express');
-const app = express();
-const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
-const path = require('path');
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
 
 app.use(bodyParser.json());
 
@@ -18,8 +17,8 @@ app.use((req, res, next) => {
     .catch(next);
 });
 
-require('./attendee')(app);
-require('./event')(app);
-require('./user')(app);
+require('./routes/attendee')(app);
+require('./routes/event')(app);
+require('./routes/user')(app);
 
 module.exports = app;
