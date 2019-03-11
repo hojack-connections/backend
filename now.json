@@ -22,7 +22,7 @@
     },
     {
       "src": "/users/login",
-      "dest": "/routes/login.js",
+      "dest": "/routes/user.js",
       "methods": ["POST"]
     },
     {
