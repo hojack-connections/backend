@@ -11,24 +11,9 @@
   "builds": [{ "src": "*/**.js", "use": "@now/node" }],
   "routes": [
     {
-      "src": "/users",
-      "dest": "/routes/user.js",
-      "methods": ["GET", "POST"]
-    },
-    {
-      "src": "/users/events",
-      "dest": "/routes/user.js",
-      "methods": ["GET"]
-    },
-    {
-      "src": "/users/login",
-      "dest": "/routes/user.js",
-      "methods": ["POST"]
-    },
-    {
-      "src": "/events",
-      "dest": "routes/event.js",
-      "methods": ["POST"]
+      "src": "/(.*)",
+      "dest": "/routes/index.js",
+      "methods": ["GET", "POST", "DELETE"]
     }
   ]
 }

@@ -1,10 +1,6 @@
 const Event = require('../models/event');
 const auth = require('../middleware/auth');
-const mongoConnect = require('../middleware/mongoConnect');
 const asyncHandler = require('express-async-handler');
-const bodyParser = require('body-parser');
-const express = require('express');
-const app = express();
 const AWS = require('aws-sdk');
 
 AWS.config = {
@@ -13,10 +9,9 @@ AWS.config = {
   region: process.env.CLIENT_AWS_REGION
 };
 
-app.use(bodyParser.json());
-app.use(mongoConnect);
-
-app.post('*', auth, asyncHandler(create));
+module.exports = app => {
+  app.post('/events', auth, asyncHandler(create));
+};
 
 /**
  * Create a new Event
@@ -28,5 +23,3 @@ async function create(req, res) {
   });
   res.json(created);
 }
-
-module.exports = app;

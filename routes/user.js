@@ -1,23 +1,17 @@
-const mongoose = require('mongoose');
 const User = require('../models/user');
 const Event = require('../models/event');
 const auth = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
-const mongoConnect = require('../middleware/mongoConnect');
 const bcrypt = require('bcrypt');
 const emailValidator = require('email-validator');
 const asyncHandler = require('express-async-handler');
-const bodyParser = require('body-parser');
-const express = require('express');
-const app = express();
 
-app.use(bodyParser.json());
-app.use(mongoConnect);
-
-app.post('/users/login', asyncHandler(login));
-app.get('/users/events', auth, asyncHandler(events));
-app.get('/users', asyncHandler(getUser));
-app.post('/users', asyncHandler(signup));
+module.exports = app => {
+  app.post('/users/login', asyncHandler(login));
+  app.get('/users/events', auth, asyncHandler(events));
+  app.get('/users', asyncHandler(getUser));
+  app.post('/users', asyncHandler(signup));
+};
 
 /**
  * Create a new User record and store in database
@@ -99,5 +93,3 @@ async function events(req, res) {
   }).exec();
   res.json(events);
 }
-
-module.exports = app;
