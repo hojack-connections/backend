@@ -9,7 +9,7 @@
     "CLIENT_AWS_REGION": "us-west-2",
     "CLIENT_BUCKET": "certifio"
   },
-  "builds": [{ "src": "*/**.js", "use": "@now/node" }],
+  "builds": [{ "src": "*/*.js", "use": "@now/node" }],
   "routes": [
     {
       "src": "(.*)",

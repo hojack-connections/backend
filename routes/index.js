@@ -2,6 +2,7 @@ const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const path = require('path');
 
 app.use(bodyParser.json());
 
@@ -17,7 +18,8 @@ app.use((req, res, next) => {
     .catch(next);
 });
 
-// Call each other exported function in this directory to allow setup
-require('not-index')(__dirname).map(fn => fn(app));
+require('./attendee')(app);
+require('./event')(app);
+require('./user')(app);
 
 module.exports = app;
