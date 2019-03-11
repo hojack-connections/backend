@@ -1,6 +1,6 @@
 # backend
 
-A micro-service based system built on top of [Zeit](https://zeit.co) using Node.js.
+A micro-service based system built on top of [Zeit](https://zeit.co/hojack) using Node.js.
 
 ## Structure
 
