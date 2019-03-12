@@ -11,6 +11,7 @@ AWS.config = {
 
 module.exports = app => {
   app.post('/events', auth, asyncHandler(create));
+  app.put('/events', auth, asyncHandler(update));
 };
 
 /**
@@ -22,4 +23,30 @@ async function create(req, res) {
     user: req.user.id
   });
   res.json(created);
+}
+
+/**
+ * Update an Event document
+ **/
+async function update(req, res) {
+  const _event = await Event.findOne({
+    _id: req.body._id
+  }).lean().exec();
+  if (!_event) {
+    res.status(404);
+    res.send('Unable to find document to update. Please supply an _id property.');
+    return;
+  }
+  const updated = await Event.updateOne({
+    _id: _event._id
+  }, {
+    ...req.body
+  });
+  if (updated.nModified !== 1) {
+    res.status(400);
+    res.send('No documents modified.');
+    return;
+  }
+  res.status(204)
+  res.end();
 }
