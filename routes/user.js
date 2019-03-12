@@ -47,10 +47,10 @@ async function signup(req, res) {
  * Authenticate and generate a jsonwebtoken
  **/
 async function login(req, res) {
-  const users = await User.find({
+  const user = await User.findOne({
     email: req.body.email
-  }).exec();
-  if (users.length === 0) {
+  }).lean().exec();
+  if (!user) {
     res.status(400);
     res.send('Email not found.');
     return;
@@ -62,7 +62,7 @@ async function login(req, res) {
     return;
   }
   const token = jwt.sign({
-    ...users[0],
+    ...user,
     // Overwrite the password hash and don't send to client
     passwordHash: ''
   }, process.env.WEB_TOKEN_SECRET);
