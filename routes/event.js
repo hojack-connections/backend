@@ -1,5 +1,5 @@
-const Event = require('../models/event');
 const mongoose = require('mongoose');
+const Event = mongoose.model('Events');
 const Attendee = mongoose.model('Attendees');
 const auth = require('../middleware/auth');
 const asyncHandler = require('express-async-handler');

@@ -1,5 +1,6 @@
-const User = require('../models/user');
-const Event = require('../models/event');
+const mongoose = require('mongoose');
+const User = mongoose.model('Users');
+const Event = mongoose.model('Events');
 const auth = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -55,7 +56,7 @@ async function login(req, res) {
     res.send('Email not found.');
     return;
   }
-  const isPasswordMatch = await bcrypt.compare(req.body.password, users[0].passwordHash);
+  const isPasswordMatch = await bcrypt.compare(req.body.password, user.passwordHash);
   if (!isPasswordMatch) {
     res.status(401);
     res.send('There was a problem authenticating.');
