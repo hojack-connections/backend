@@ -42,7 +42,7 @@ async function update(req, res) {
   }, {
     ...req.body
   });
-  if (updated.nModified !== 1) {
+  if (updated.n !== 1) {
     res.status(400);
     res.send('No documents modified.');
     return;
