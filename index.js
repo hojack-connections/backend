@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+require('./models/attendee');
 const express = require('express');
 const bodyParser = require('body-parser');
 const asyncHandler = require('express-async-handler');

@@ -9,8 +9,7 @@ module.exports = (req, res, next) => {
   }
 
   try {
-    const { _doc } = jwt.verify(token, process.env.WEB_TOKEN_SECRET);
-    req.user = _doc;
+    req.user = jwt.verify(token, process.env.WEB_TOKEN_SECRET);
     next();
   } catch (err) {
     console.log('Error decoding token', err);
