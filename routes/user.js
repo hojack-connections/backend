@@ -90,7 +90,7 @@ async function getUser(req, res) {
  **/
 async function events(req, res) {
   const events = await Event.find({
-    user: req.user.id
-  }).exec();
+    user: req.user._id
+  }).lean().exec();
   res.json(events);
 }
