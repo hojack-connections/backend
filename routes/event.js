@@ -19,7 +19,18 @@ module.exports = app => {
   app.put('/events', auth, asyncHandler(update));
   app.delete('/events', auth, asyncHandler(_delete));
   app.post('/events/submit', auth, asyncHandler(submit));
+  app.get('/users/events/count', auth, asyncHandler(getEventCount));
 };
+
+/**
+ * Get the number of events owned by a user
+ **/
+async function getEventCount(req, res) {
+  const count = await Event.countDocuments({
+    user: req.user._id
+  }).exec();
+  res.json({ count }) ;
+}
 
 /**
  * Create a new Event
