@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "alias": ["api.gocert.io"],
   "env": {
     "WEB_TOKEN_SECRET": "@web-token-secret",
     "DB_URI": "@db-uri",
