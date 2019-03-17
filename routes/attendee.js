@@ -32,7 +32,7 @@ async function create(req, res) {
     res.send('Send a base64 encoded png image of the signature');
     return;
   }
-  const buffer = new Buffer(req.body.signature.replace(/^data:image\/\w+;base64,/, ''), 'base64');
+  const buffer = Buffer.from(req.body.signature.replace(/^data:image\/\w+;base64,/, ''), 'base64');
   const imageKey = uuid.v4();
   await s3.putObject({
     Key: imageKey,
