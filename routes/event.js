@@ -20,6 +20,7 @@ module.exports = app => {
   app.delete('/events', auth, asyncHandler(_delete));
   app.post('/events/submit', auth, asyncHandler(submit));
   app.get('/users/events/count', auth, asyncHandler(getEventCount));
+  app.get('/events/attendees', auth, asyncHandler(getAttendees));
 };
 
 /**
@@ -106,6 +107,18 @@ async function _delete(req, res) {
   }
   res.status(204);
   res.end();
+}
+
+async function getAttendees(req, res) {
+  if (!req.query.eventId) {
+    res.status(400);
+    res.send('Please supply an eventId to retrieve attendees for.');
+    return;
+  }
+  const attendees = await Attendee.find({
+    event: req.query.eventId
+  }).lean().exec();
+  res.json(attendees);
 }
 
 /**
