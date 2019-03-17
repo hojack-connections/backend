@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Attendee = mongoose.model('Attendees');
+const Event = mongoose.model('Events');
 const auth = require('../middleware/auth');
 const asyncHandler = require('express-async-handler');
 const AWS = require('aws-sdk');
@@ -19,6 +20,7 @@ const s3 = new AWS.S3({
 
 module.exports = app => {
   app.post('/attendees', auth, asyncHandler(create));
+  app.get('/attendees', auth, asyncHandler(loadAttendees));
 };
 
 /**
@@ -40,8 +42,23 @@ async function create(req, res) {
   });
   const created = await Attendee.create({
     ...req.body,
-    user: req.user.id,
+    user: req.user._id,
     signature: imageKey
   });
   res.json(created);
+}
+
+/**
+ * Load attendees bound to the requesting user
+ **/
+async function loadAttendees(req, res) {
+  const userEvents = await Event.find({
+    user: req.user._id
+  }).lean().exec();
+  const attendees = await Attendee.find({
+    event: {
+      $in: userEvents.map(e => e._id)
+    }
+  }).lean().exec();
+  res.json(attendees);
 }
