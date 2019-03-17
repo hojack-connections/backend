@@ -25,12 +25,12 @@ const AttendeeSchema = new Schema({
   event: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Events',
-    required: false,
+    required: true
   },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Users',
-    required: false,
+    required: false
   }
 }, {
   collection: 'attendees'
