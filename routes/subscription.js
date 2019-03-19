@@ -5,9 +5,10 @@ const asyncHandler = require('express-async-handler');
 const axios = require('axios');
 
 const IOS_VERIFICATION_LIVE = 'https://buy.itunes.apple.com/verifyReceipt';
-const IOS_VERIFICATION_SANDBOX = 'https://sandbox.itunes.apple.com/verifyReceipt';
+const IOS_VERIFICATION_SANDBOX =
+  'https://sandbox.itunes.apple.com/verifyReceipt';
 
-module.exports = app => {
+module.exports = (app) => {
   app.get('/subscriptions/status', auth, asyncHandler(status));
   app.post('/subscriptions', auth, asyncHandler(create));
 };
@@ -19,8 +20,10 @@ async function create(req, res) {
   if (req.body.isTrial) {
     const trialSubscription = await Subscription.findOne({
       userId: req.user._id,
-      isTrial: true
-    }).lean().exec();
+      isTrial: true,
+    })
+      .lean()
+      .exec();
     if (trialSubscription) {
       res.status(400);
       res.send('Unable to create a second trial period.');
@@ -30,7 +33,7 @@ async function create(req, res) {
     req.body.expirationDate = new Date(Date.now() + trialLengthMS);
   } else if (req.body.platform === 'ios') {
     const verificationRes = await axios.post(IOS_VERIFICATION_SANDBOX, {
-      'receipt-data': req.body.receiptData
+      'receipt-data': req.body.receiptData,
     });
     console.log(verificationRes);
     res.send('done');
@@ -47,7 +50,7 @@ async function create(req, res) {
   // Validate receipt
   const created = await Subscription.create({
     ...req.body,
-    userId: req.user._id
+    userId: req.user._id,
   });
   res.json(created);
 }
@@ -57,21 +60,23 @@ async function create(req, res) {
  * whether the requesting user is eligible for a free trial
  **/
 async function status(req, res) {
-  const [ activeSubscription, trialSubscription ] = await Promise.all([
+  const [activeSubscription, trialSubscription] = await Promise.all([
     Subscription.findOne({
       userId: req.user._id,
       expirationDate: {
-        $gte: new Date()
-      }
-    }).lean().exec(),
+        $gte: new Date(),
+      },
+    })
+      .lean()
+      .exec(),
     Subscription.findOne({
       userId: req.user._id,
-      isTrial: true
-    })
+      isTrial: true,
+    }),
   ]);
   res.json({
     activeSubscription,
     trialSubscription,
-    freeTrialEligible: !trialSubscription
+    freeTrialEligible: !trialSubscription,
   });
 }

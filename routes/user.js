@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 const emailValidator = require('email-validator');
 const asyncHandler = require('express-async-handler');
 
-module.exports = app => {
+module.exports = (app) => {
   app.post('/users/login', asyncHandler(login));
   app.get('/users/events', auth, asyncHandler(events));
   app.get('/users', asyncHandler(getUser));
@@ -25,8 +25,8 @@ async function signup(req, res) {
   }
   const emailCount = await User.countDocuments({
     email: {
-      $regex: new RegExp(`^${req.body.email}$`, 'i')
-    }
+      $regex: new RegExp(`^${req.body.email}$`, 'i'),
+    },
   }).exec();
   if (emailCount > 0) {
     res.status(400);
@@ -49,24 +49,32 @@ async function signup(req, res) {
  **/
 async function login(req, res) {
   const user = await User.findOne({
-    email: req.body.email
-  }).lean().exec();
+    email: req.body.email,
+  })
+    .lean()
+    .exec();
   if (!user) {
     res.status(400);
     res.send('Email not found.');
     return;
   }
-  const isPasswordMatch = await bcrypt.compare(req.body.password, user.passwordHash);
+  const isPasswordMatch = await bcrypt.compare(
+    req.body.password,
+    user.passwordHash
+  );
   if (!isPasswordMatch) {
     res.status(401);
     res.send('There was a problem authenticating.');
     return;
   }
-  const token = jwt.sign({
-    ...user,
-    // Overwrite the password hash and don't send to client
-    passwordHash: ''
-  }, process.env.WEB_TOKEN_SECRET);
+  const token = jwt.sign(
+    {
+      ...user,
+      // Overwrite the password hash and don't send to client
+      passwordHash: '',
+    },
+    process.env.WEB_TOKEN_SECRET
+  );
   res.json({ token });
 }
 
@@ -75,8 +83,10 @@ async function login(req, res) {
  **/
 async function getUser(req, res) {
   const user = await User.findOne({
-    email: req.query.email
-  }).lean().exec();
+    email: req.query.email,
+  })
+    .lean()
+    .exec();
   if (!user) {
     res.status(404);
     res.send('Email not found.');
@@ -91,7 +101,9 @@ async function getUser(req, res) {
  **/
 async function events(req, res) {
   const events = await Event.find({
-    user: req.user._id
-  }).lean().exec();
+    user: req.user._id,
+  })
+    .lean()
+    .exec();
   res.json(events);
 }
