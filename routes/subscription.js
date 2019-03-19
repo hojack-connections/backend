@@ -52,7 +52,8 @@ async function create(req, res) {
 }
 
 /**
- * Return the first subscription with an expirationDate in the future
+ * Return the subscription status, active subscription, trial subscription and
+ * whether the requesting user is eligible for a free trial
  **/
 async function status(req, res) {
   const [ activeSubscription, trialSubscription ] = await Promise.all([
