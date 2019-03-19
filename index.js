@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 require('./models/attendee');
 require('./models/event');
 require('./models/user');
+require('./models/subscription');
 const express = require('express');
 const bodyParser = require('body-parser');
 const asyncHandler = require('express-async-handler');
@@ -23,5 +24,6 @@ app.use(asyncHandler(async (req, res, next) => {
 require('./routes/attendee')(app);
 require('./routes/event')(app);
 require('./routes/user')(app);
+require('./routes/subscription')(app);
 
 module.exports = app;
