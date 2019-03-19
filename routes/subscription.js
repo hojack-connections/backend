@@ -8,7 +8,7 @@ const IOS_VERIFICATION_LIVE = 'https://buy.itunes.apple.com/verifyReceipt';
 const IOS_VERIFICATION_SANDBOX = 'https://sandbox.itunes.apple.com/verifyReceipt';
 
 module.exports = app => {
-  app.get('/subscriptions/active', auth, asyncHandler(activeSubscription));
+  app.get('/subscriptions/status', auth, asyncHandler(status));
   app.post('/subscriptions', auth, asyncHandler(create));
 };
 
@@ -54,12 +54,22 @@ async function create(req, res) {
 /**
  * Return the first subscription with an expirationDate in the future
  **/
-async function activeSubscription(req, res) {
-  const subscription = await Subscription.findOne({
-    userId: req.user._id,
-    expirationDate: {
-      $gte: new Date()
-    }
-  }).lean().exec();
-  res.json(subscription);
+async function status(req, res) {
+  const [ activeSubscription, trialSubscription ] = await Promise.all([
+    Subscription.findOne({
+      userId: req.user._id,
+      expirationDate: {
+        $gte: new Date()
+      }
+    }).lean().exec(),
+    Subscription.findOne({
+      userId: req.user._id,
+      isTrial: true
+    })
+  ]);
+  res.json({
+    activeSubscription,
+    trialSubscription,
+    freeTrialEligible: !trialSubscription
+  });
 }
