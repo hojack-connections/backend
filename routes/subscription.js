@@ -34,6 +34,7 @@ async function create(req, res) {
     });
     console.log(verificationRes);
     res.send('done');
+    return;
   } else if (req.body.platform === 'android') {
     res.status(400);
     res.send('android receipt verification is not yet supported');
