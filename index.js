@@ -4,11 +4,12 @@ require('./models/event');
 require('./models/user');
 require('./models/subscription');
 const express = require('express');
-const bodyParser = require('body-parser');
 const asyncHandler = require('express-async-handler');
+const secret = require('./middleware/secret');
 const app = express();
 
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(secret);
 
 /**
  * Establish a connection to the mongo database, then continue the request

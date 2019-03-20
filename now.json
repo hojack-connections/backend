@@ -8,7 +8,8 @@
     "CLIENT_AWS_SECRET_ACCESS_KEY": "@client-aws-secret-access-key",
     "MANDRILL_API_KEY": "@mandrill-api-key",
     "CLIENT_AWS_REGION": "us-west-2",
-    "CLIENT_BUCKET": "certifio"
+    "CLIENT_BUCKET": "certifio",
+    "APP_SECRET": "@app-secret"
   },
   "builds": [{ "src": "index.js", "use": "@now/node" }],
   "routes": [
