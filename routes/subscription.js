@@ -44,7 +44,7 @@ async function create(req, res) {
     });
     await status(req, res);
   } else if (req.body.platform === 'ios') {
-    const verificationRes = await axios.post(IOS_VERIFICATION_SANDBOX, {
+    const verificationRes = await axios.post(IOS_VERIFICATION_LIVE, {
       'receipt-data': req.body.receiptData,
     });
     // receipt.in_app contains an array of purchases
@@ -57,21 +57,24 @@ async function create(req, res) {
     // Make sure to process all of them and add them
     // The one furthest in the future will automatically be the active one
     const { receipt } = verificationRes.data;
-    await Promise.all(receipt.in_app.map(purchase => {
-      return Subscription.findOne({
-        userId: req.user._id,
-        transactionId: purchase.transaction_id,
-      })
-        .then((doc) => {
+    await Promise.all(
+      receipt.in_app.map((purchase) =>
+        Subscription.findOne({
+          userId: req.user._id,
+          transactionId: purchase.transaction_id,
+        }).then((doc) => {
           if (doc) return;
           return Subscription.create({
             ...req.body,
             userId: req.user._id,
-            expirationDate: new Date(+purchase.purchase_date_ms + productIdMap[purchase.product_id]),
+            expirationDate: new Date(
+              +purchase.purchase_date_ms + productIdMap[purchase.product_id]
+            ),
             transactionId: purchase.transaction_id,
           });
-        });
-    }));
+        })
+      )
+    );
     await status(req, res);
   } else if (req.body.platform === 'android') {
     res.status(400);
@@ -87,29 +90,47 @@ async function create(req, res) {
  * whether the requesting user is eligible for a free trial
  **/
 async function status(req, res) {
-  const [activeSubscription, trialSubscription, latestSubscription] = await Promise.all([
-    Subscription.findOne({
-      userId: req.user._id,
-      expirationDate: {
-        $gte: new Date(),
+  const [
+    activeSubscription,
+    trialSubscription,
+    latestSubscription,
+  ] = await Promise.all([
+    Subscription.findOne(
+      {
+        userId: req.user._id,
+        expirationDate: {
+          $gte: new Date(),
+        },
       },
-    }, null, {
-      sort: {
-        expirationDate: -1
+      null,
+      {
+        sort: {
+          expirationDate: -1,
+        },
       }
-    }).lean().exec(),
+    )
+      .lean()
+      .exec(),
     Subscription.findOne({
       userId: req.user._id,
       isTrial: true,
-    }).lean().exec(),
-    Subscription.findOne({
-      userId: req.user._id,
-      isTrial: false,
-    }, null, {
-      sort: {
-        expirationDate: -1
+    })
+      .lean()
+      .exec(),
+    Subscription.findOne(
+      {
+        userId: req.user._id,
+        isTrial: false,
+      },
+      null,
+      {
+        sort: {
+          expirationDate: -1,
+        },
       }
-    }).lean().exec(),
+    )
+      .lean()
+      .exec(),
   ]);
   res.json({
     activeSubscription,
