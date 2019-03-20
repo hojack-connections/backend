@@ -5,7 +5,13 @@
   "main": "index.js",
   "scripts": {
     "start": "node -e 'require(`dotenv`).config(); require(`.`).listen(4000)'",
+    "lint": "eslint --fix \"**/*.js\" --ignore-pattern node_modules",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@jchancehud/eslint-config"
+    ]
   },
   "repository": {
     "type": "git",
@@ -19,6 +25,7 @@
   "homepage": "https://github.com/kuchman011/backend#readme",
   "dependencies": {
     "aws-sdk": "^2.418.0",
+    "axios": "^0.18.0",
     "bcrypt": "^3.0.4",
     "body-parser": "^1.18.3",
     "email-validator": "^2.0.4",
@@ -31,6 +38,8 @@
     "uuid": "^3.3.2"
   },
   "devDependencies": {
-    "dotenv": "^6.2.0"
+    "@jchancehud/eslint-config": "0.0.8",
+    "dotenv": "^6.2.0",
+    "eslint": "^5.15.3"
   }
 }
