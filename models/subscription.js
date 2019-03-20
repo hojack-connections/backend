@@ -20,6 +20,10 @@ const SubscriptionSchema = new Schema(
       required: true,
       default: false,
     },
+    transactionId: {
+      type: String,
+      required: false,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Users',

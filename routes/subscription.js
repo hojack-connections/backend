@@ -8,6 +8,13 @@ const IOS_VERIFICATION_LIVE = 'https://buy.itunes.apple.com/verifyReceipt';
 const IOS_VERIFICATION_SANDBOX =
   'https://sandbox.itunes.apple.com/verifyReceipt';
 
+const productIdMap = {
+  onemonth: 1000 * 60 * 60 * 24 * 31,
+  threemonth: 1000 * 60 * 60 * 24 * 31 * 3,
+  sixmonth: 1000 * 60 * 60 * 24 * 31 * 6,
+  twelvemonth: 1000 * 60 * 60 * 24 * 31 * 12,
+};
+
 module.exports = (app) => {
   app.get('/subscriptions/status', auth, asyncHandler(status));
   app.post('/subscriptions', auth, asyncHandler(create));
@@ -30,29 +37,49 @@ async function create(req, res) {
       return;
     }
     const trialLengthMS = 1000 * 60 * 60 * 24 * 14;
-    req.body.expirationDate = new Date(Date.now() + trialLengthMS);
+    await Subscription.create({
+      ...req.body,
+      userId: req.user._id,
+      expirationDate: new Date(Date.now() + trialLengthMS),
+    });
+    await status(req, res);
   } else if (req.body.platform === 'ios') {
     const verificationRes = await axios.post(IOS_VERIFICATION_SANDBOX, {
       'receipt-data': req.body.receiptData,
     });
-    console.log(verificationRes);
-    res.send('done');
-    return;
+    // receipt.in_app contains an array of purchases
+    if (verificationRes.data.status !== 0) {
+      res.status(400);
+      res.send('Error validating iOS purchase receipt');
+      return;
+    }
+    // Apple sends all the receipts on device
+    // Make sure to process all of them and add them
+    // The one furthest in the future will automatically be the active one
+    const { receipt } = verificationRes.data;
+    await Promise.all(receipt.in_app.map(purchase => {
+      return Subscription.findOne({
+        userId: req.user._id,
+        transactionId: purchase.transaction_id,
+      })
+        .then((doc) => {
+          if (doc) return;
+          return Subscription.create({
+            ...req.body,
+            userId: req.user._id,
+            expirationDate: new Date(+purchase.purchase_date_ms + productIdMap[purchase.product_id]),
+            transactionId: purchase.transaction_id,
+          });
+        });
+    }));
+    await status(req, res);
   } else if (req.body.platform === 'android') {
     res.status(400);
     res.send('android receipt verification is not yet supported');
-    return;
   } else {
     res.status(400);
     res.send(`Invalid platform specified: ${req.body.platform}`);
-    return;
   }
-  // Validate receipt
-  const created = await Subscription.create({
-    ...req.body,
-    userId: req.user._id,
-  });
-  res.json(created);
 }
 
 /**
@@ -66,7 +93,7 @@ async function status(req, res) {
       expirationDate: {
         $gte: new Date(),
       },
-    })
+    }, null, { sort: { expirationDate: -1 }})
       .lean()
       .exec(),
     Subscription.findOne({
