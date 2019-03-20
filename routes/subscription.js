@@ -87,23 +87,34 @@ async function create(req, res) {
  * whether the requesting user is eligible for a free trial
  **/
 async function status(req, res) {
-  const [activeSubscription, trialSubscription] = await Promise.all([
+  const [activeSubscription, trialSubscription, latestSubscription] = await Promise.all([
     Subscription.findOne({
       userId: req.user._id,
       expirationDate: {
         $gte: new Date(),
       },
-    }, null, { sort: { expirationDate: -1 }})
-      .lean()
-      .exec(),
+    }, null, {
+      sort: {
+        expirationDate: -1
+      }
+    }).lean().exec(),
     Subscription.findOne({
       userId: req.user._id,
       isTrial: true,
-    }),
+    }).lean().exec(),
+    Subscription.findOne({
+      userId: req.user._id,
+      isTrial: false,
+    }, null, {
+      sort: {
+        expirationDate: -1
+      }
+    }).lean().exec(),
   ]);
   res.json({
     activeSubscription,
     trialSubscription,
+    latestSubscription,
     freeTrialEligible: !trialSubscription,
   });
 }
