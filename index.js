@@ -3,6 +3,7 @@ require('./models/attendee');
 require('./models/event');
 require('./models/user');
 require('./models/subscription');
+require('./models/receiver');
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const secret = require('./middleware/secret');
@@ -28,5 +29,6 @@ require('./routes/attendee')(app);
 require('./routes/event')(app);
 require('./routes/user')(app);
 require('./routes/subscription')(app);
+require('./routes/receiver')(app);
 
 module.exports = app;

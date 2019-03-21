@@ -23,6 +23,11 @@ const AttendeeSchema = new Schema(
       type: String,
       required: false,
     },
+    receivedCertificate: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
     event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Events',
