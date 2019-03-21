@@ -20,6 +20,8 @@ const s3 = new AWS.S3({
 
 module.exports = (app) => {
   app.post('/attendees', auth, asyncHandler(create));
+  app.delete('/attendees', auth, asyncHandler(_delete));
+  app.put('/attendees', auth, asyncHandler(update));
   app.get('/attendees', auth, asyncHandler(loadAttendees));
 };
 
@@ -49,6 +51,79 @@ async function create(req, res) {
     signature: imageKey,
   });
   res.json(created);
+}
+
+/**
+ * Delete an Attendee document
+ **/
+async function _delete(req, res) {
+  if (!req.body._id) {
+    res.status(400);
+    res.send('No _id specified for deletion.');
+    return;
+  }
+  const doc = await Attendee.findOne({
+    _id: req.body._id,
+  })
+    .lean()
+    .exec();
+  if (!doc) {
+    res.status(404);
+    res.send(
+      'Unable to find document to delete. Please supply an _id property.'
+    );
+    return;
+  }
+  if (doc.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    res.send("You don't own this event and cannot delete it.");
+    return;
+  }
+  const deleted = await Attendee.deleteOne({
+    _id: req.body._id,
+  }).exec();
+  if (deleted.n !== 1) {
+    res.status(500);
+    res.send('No documents deleted.');
+    return;
+  }
+  res.status(204);
+  res.end();
+}
+
+async function update(req, res) {
+  const doc = await Attendee.findOne({
+    _id: req.body._id,
+  })
+    .lean()
+    .exec();
+  if (!doc) {
+    res.status(404);
+    res.send(
+      'Unable to find document to update. Please supply an _id property.'
+    );
+    return;
+  }
+  if (doc.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    res.send(`You don't own this event and cannot update it.`);
+    return;
+  }
+  const updated = await Attendee.updateOne(
+    {
+      _id: doc._id,
+    },
+    {
+      ...req.body,
+    }
+  );
+  if (updated.n !== 1) {
+    res.status(500);
+    res.send('No documents selected.');
+    return;
+  }
+  res.status(204);
+  res.end();
 }
 
 /**
