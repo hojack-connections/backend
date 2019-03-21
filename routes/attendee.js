@@ -48,7 +48,10 @@ async function create(req, res) {
   const created = await Attendee.create({
     ...req.body,
     user: req.user._id,
-    signature: imageKey,
+    signature: s3.getSignedUrl('getObject', {
+      Bucket: process.env.CLIENT_BUCKET,
+      Key: imageKey,
+    }),
   });
   res.json(created);
 }
