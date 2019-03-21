@@ -17,6 +17,15 @@ async function create(req, res) {
     res.send('Invalid email supplied.');
     return;
   }
+  const duplicate = await Receiver.findOne({
+    eventId: req.body.eventId,
+    email: req.body.email,
+  }).lean().exec();
+  if (duplicate) {
+    res.status(400);
+    res.send('This email is already a receiver for this event');
+    return;
+  }
   const _event = await Event.findOne({
     _id: req.body.eventId,
     user: mongoose.Types.ObjectId(req.user._id),

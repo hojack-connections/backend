@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const Event = mongoose.model('Events');
 const Attendee = mongoose.model('Attendees');
+const User = mongoose.model('Users');
+const Receiver = mongoose.model('Receivers');
 const auth = require('../middleware/auth');
 const asyncHandler = require('express-async-handler');
 const AWS = require('aws-sdk');
@@ -40,6 +42,14 @@ async function create(req, res) {
   const created = await Event.create({
     ...req.body,
     user: req.user._id,
+  });
+  // Create the initial sheet receiver
+  const user = await User.findOne({
+    _id: req.user._id,
+  }).lean().exec();
+  await Receiver.create({
+    email: user.email,
+    eventId: created._id,
   });
   res.json(created);
 }
