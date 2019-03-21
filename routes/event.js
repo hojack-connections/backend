@@ -166,25 +166,15 @@ async function submit(req, res) {
     res.send("You don't own this event and cannot submit it.");
     return;
   }
-  const certReceivers = (req.body.certReceivers || []).filter((email) =>
-    emailValidator.validate(email)
-  );
-
-  const sheetReceivers = (req.body.sheetReceivers || []).filter((email) =>
-    emailValidator.validate(email)
-  );
-
   const attendees = await Attendee.find({
     event: req.body._id,
-  })
-    .lean()
-    .exec();
-  if (req.body.sheetReceivers.indexOf('all') !== -1) {
-    sheetReceivers.push(...attendees.map((a) => a.email));
-  }
-  if (req.body.certReceivers.indexOf('all') !== -1) {
-    certReceivers.push(...attendees.map((a) => a.email));
-  }
+  }).exec();
+
+  const receivers = await Receiver.find({
+    eventId: req.body._id,
+  }).lean().exec();
+  const sheetReceivers = receivers.map((r) => r.email);
+
   const sheetTemplateData = {
     key: process.env.MANDRILL_API_KEY,
     template_content: [],
@@ -240,6 +230,7 @@ async function submit(req, res) {
   const date = new Date(doc.date);
   await Promise.all(
     attendees.map((attendee) => {
+      if (attendee.receivedCertificate) return Promise.resolve();
       const certTemplateData = {
         key: process.env.MANDRILL_API_KEY,
         template_content: [],
@@ -248,9 +239,9 @@ async function submit(req, res) {
           inline_css: true,
           merge: true,
           merge_language: 'mailchimp',
-          to: certReceivers.map((email) => ({
-            email,
-          })),
+          to: {
+            email: attendee.email,
+          },
           global_merge_vars: [
             {
               name: 'FNAME',
@@ -310,6 +301,13 @@ async function submit(req, res) {
     },
     {
       isSubmitted: true,
+    }
+  );
+  await Attendee.updateMany(
+    {
+      event: doc._id,
+    }, {
+      receivedCertificate: true,
     }
   );
   res.status(204);
