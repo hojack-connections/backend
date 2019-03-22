@@ -7,8 +7,8 @@ const AWS = require('aws-sdk');
 const uuid = require('uuid');
 
 AWS.config = {
-  accessKeyId: process.env.CLIENT_ACCESS_KEY_ID,
-  secretAccessKey: process.env.CLIENT_SECRET_ACCESS_KEY,
+  accessKeyId: process.env.CLIENT_AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.CLIENT_AWS_SECRET_ACCESS_KEY,
   region: process.env.CLIENT_AWS_REGION,
 };
 
@@ -44,7 +44,7 @@ async function create(req, res) {
     Body: buffer,
     ContentType: 'image/png',
     ContentEncoding: 'base64',
-  });
+  }).promise();
   const created = await Attendee.create({
     ...req.body,
     user: req.user._id,
