@@ -6,7 +6,6 @@ const Receiver = mongoose.model('Receivers');
 const auth = require('../middleware/auth');
 const asyncHandler = require('express-async-handler');
 const AWS = require('aws-sdk');
-const emailValidator = require('email-validator');
 const mandrill = require('mandrill-api/mandrill');
 const mandrillClient = new mandrill.Mandrill(process.env.MANDRILL_API_KEY);
 
@@ -23,6 +22,7 @@ module.exports = (app) => {
   app.post('/events/submit', auth, asyncHandler(submit));
   app.get('/users/events/count', auth, asyncHandler(getEventCount));
   app.get('/events/attendees', auth, asyncHandler(getAttendees));
+  app.post('/events/certificate', auth, asyncHandler(sendCertificate));
 };
 
 /**
@@ -46,7 +46,9 @@ async function create(req, res) {
   // Create the initial sheet receiver
   const user = await User.findOne({
     _id: req.user._id,
-  }).lean().exec();
+  })
+    .lean()
+    .exec();
   await Receiver.create({
     email: user.email,
     eventId: created._id,
@@ -145,6 +147,38 @@ async function getAttendees(req, res) {
 }
 
 /**
+ * Send a certificate for an attendee to a specific email
+ * A utility to preview the certificate
+ **/
+async function sendCertificate(req, res) {
+  const doc = await Event.findOne({
+    _id: req.body._id,
+  })
+    .populate('user')
+    .exec();
+  if (!doc) {
+    res.status(404);
+    res.send(
+      'Unable to find document to submit. Please supply an _id property.'
+    );
+    return;
+  }
+  if (doc.user._id.toString() !== req.user._id.toString()) {
+    res.status(401);
+    res.send("You don't own this event and cannot submit it.");
+    return;
+  }
+  const attendee = await Attendee.findOne({
+    _id: mongoose.Types.ObjectId(req.body.attendeeId),
+  })
+    .lean()
+    .exec();
+  await _sendCertificate(doc, attendee, req.body.email);
+  res.status(204);
+  res.end();
+}
+
+/**
  * Submit and send emails
  **/
 /* eslint-disable camelcase */
@@ -172,129 +206,17 @@ async function submit(req, res) {
 
   const receivers = await Receiver.find({
     eventId: req.body._id,
-  }).lean().exec();
-  const sheetReceivers = receivers.map((r) => r.email);
+  })
+    .lean()
+    .exec();
 
-  const sheetTemplateData = {
-    key: process.env.MANDRILL_API_KEY,
-    template_content: [],
-    message: {
-      auto_text: true,
-      inline_css: true,
-      merge: true,
-      merge_language: 'handlebars',
-      to: sheetReceivers.map((email) => ({
-        email,
-      })),
-      subject: 'ATTENDANCE SUMMARY',
-      global_merge_vars: [
-        {
-          name: 'courseNo',
-          content: doc.courseNo,
-        },
-        {
-          name: 'courseName',
-          content: doc.courseName,
-        },
-        {
-          name: 'address',
-          content: doc.address,
-        },
-        {
-          name: 'city',
-          content: doc.city,
-        },
-        {
-          name: 'state',
-          content: doc.state,
-        },
-        {
-          name: 'presenterName',
-          content: doc.presenterName,
-        },
-        {
-          name: 'attendees',
-          content: attendees,
-        },
-      ],
-      from_email: 'support@hojackconnections.com',
-    },
-    template_name: 'TEST_SUMMARY_SHEET_EMAIL',
-  };
-  await new Promise((rs, rj) => {
-    mandrillClient.messages.sendTemplate(sheetTemplateData, (results) => {
-      if (results.filter((r) => r.status !== 'sent').length) rj(results);
-      else rs();
-    });
-  });
-  const date = new Date(doc.date);
-  await Promise.all(
-    attendees.map((attendee) => {
-      if (attendee.receivedCertificate) return Promise.resolve();
-      const certTemplateData = {
-        key: process.env.MANDRILL_API_KEY,
-        template_content: [],
-        message: {
-          auto_text: true,
-          inline_css: true,
-          merge: true,
-          merge_language: 'mailchimp',
-          to: {
-            email: attendee.email,
-          },
-          global_merge_vars: [
-            {
-              name: 'FNAME',
-              content: attendee.firstname,
-            },
-            {
-              name: 'LNAME',
-              content: attendee.lastname,
-            },
-            {
-              name: 'COURSET',
-              content: doc.courseName,
-            },
-            {
-              name: 'Presenter',
-              content: doc.presenterName,
-            },
-            {
-              name: 'ADDRESS',
-              content: doc.address,
-            },
-            {
-              name: 'TRAININGP',
-              content: doc.trainingProvider,
-            },
-            {
-              name: 'TDATE',
-              content:
-                date.getMonth() +
-                1 +
-                '/' +
-                date.getDate() +
-                '/' +
-                date.getFullYear(),
-            },
-            {
-              name: 'CREDITS',
-              content: doc.numberOfCourseCredits,
-            },
-          ],
-          subject: 'CERTIFICATE OF COURSE COMPLETION',
-          from_email: 'support@hojackconnections.com',
-        },
-        template_name: 'Certificate Template',
-      };
-      return new Promise((rs, rj) => {
-        mandrillClient.messages.sendTemplate(certTemplateData, (results) => {
-          if (results.filter((r) => r.status !== 'sent').length) rj(results);
-          else rs();
-        });
-      });
-    })
-  );
+  await Promise.all([
+    sendSummary(doc, attendees, receivers.map((r) => r.email)),
+    ...attendees.map((_attendee) => {
+      if (_attendee.receivedCertificate) return Promise.resolve();
+      return _sendCertificate(doc, _attendee);
+    }),
+  ]);
   await Event.updateOne(
     {
       _id: doc._id,
@@ -306,11 +228,129 @@ async function submit(req, res) {
   await Attendee.updateMany(
     {
       event: doc._id,
-    }, {
+    },
+    {
       receivedCertificate: true,
     }
   );
   res.status(204);
   res.end();
+}
+
+function sendSummary(_event, attendees, emails) {
+  const sheetTemplateData = {
+    key: process.env.MANDRILL_API_KEY,
+    template_content: [],
+    message: {
+      auto_text: true,
+      inline_css: true,
+      merge: true,
+      merge_language: 'handlebars',
+      to: emails.map((email) => ({ email })),
+      subject: 'ATTENDANCE SUMMARY',
+      global_merge_vars: [
+        {
+          name: 'courseNo',
+          content: _event.courseNo,
+        },
+        {
+          name: 'courseName',
+          content: _event.courseName,
+        },
+        {
+          name: 'address',
+          content: _event.address,
+        },
+        {
+          name: 'city',
+          content: _event.city,
+        },
+        {
+          name: 'state',
+          content: _event.state,
+        },
+        {
+          name: 'presenterName',
+          content: _event.presenterName,
+        },
+        {
+          name: 'attendees',
+          content: attendees,
+        },
+      ],
+      from_email: 'support@hojackconnections.com',
+    },
+    template_name: 'TEST_SUMMARY_SHEET_EMAIL',
+  };
+  return new Promise((rs, rj) => {
+    mandrillClient.messages.sendTemplate(sheetTemplateData, (results) => {
+      if (results.filter((r) => r.status !== 'sent').length) rj(results);
+      else rs();
+    });
+  });
+}
+
+function _sendCertificate(_event, attendee, email) {
+  const date = new Date(_event.date);
+  const certTemplateData = {
+    key: process.env.MANDRILL_API_KEY,
+    template_content: [],
+    message: {
+      auto_text: true,
+      inline_css: true,
+      merge: true,
+      merge_language: 'mailchimp',
+      to: [{ email: email || attendee.email }],
+      global_merge_vars: [
+        {
+          name: 'FNAME',
+          content: attendee.firstname,
+        },
+        {
+          name: 'LNAME',
+          content: attendee.lastname,
+        },
+        {
+          name: 'COURSET',
+          content: _event.courseName,
+        },
+        {
+          name: 'Presenter',
+          content: _event.presenterName,
+        },
+        {
+          name: 'ADDRESS',
+          content: _event.address,
+        },
+        {
+          name: 'TRAININGP',
+          content: _event.trainingProvider,
+        },
+        {
+          name: 'TDATE',
+          content:
+            date.getMonth() +
+            1 +
+            '/' +
+            date.getDate() +
+            '/' +
+            date.getFullYear(),
+        },
+        {
+          name: 'CREDITS',
+          content: _event.numberOfCourseCredits,
+        },
+      ],
+      subject: 'CERTIFICATE OF COURSE COMPLETION',
+      from_email: 'support@hojackconnections.com',
+    },
+    template_name: 'Certificate Template',
+  };
+  return new Promise((rs, rj) => {
+    mandrillClient.messages.sendTemplate(certTemplateData, (results) => {
+      if (results.filter((r) => r.status !== 'sent').length) rj(results);
+      else rs();
+    });
+  });
 }
 /* eslint-enable camelcase */
