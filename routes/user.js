@@ -12,6 +12,7 @@ module.exports = (app) => {
   app.get('/users/events', auth, asyncHandler(events));
   app.get('/users', asyncHandler(getUser));
   app.post('/users', asyncHandler(signup));
+  app.get('/users/authenticated', auth, asyncHandler(authenticated));
 };
 
 /**
@@ -106,4 +107,13 @@ async function events(req, res) {
     .lean()
     .exec();
   res.json(events);
+}
+
+async function authenticated(req, res) {
+  const user = await User.findOne({
+    _id: mongoose.Types.ObjectId(req.user._id),
+  })
+    .lean()
+    .exec();
+  res.json(user);
 }
