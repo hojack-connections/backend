@@ -20,7 +20,9 @@ async function create(req, res) {
   const duplicate = await Receiver.findOne({
     eventId: req.body.eventId,
     email: req.body.email,
-  }).lean().exec();
+  })
+    .lean()
+    .exec();
   if (duplicate) {
     res.status(400);
     res.send('This email is already a receiver for this event');
@@ -29,7 +31,9 @@ async function create(req, res) {
   const _event = await Event.findOne({
     _id: req.body.eventId,
     user: mongoose.Types.ObjectId(req.user._id),
-  }).lean().exec();
+  })
+    .lean()
+    .exec();
   if (!_event) {
     res.status(401);
     res.send('Unable to find event or not authorized');
@@ -44,7 +48,9 @@ async function create(req, res) {
 async function _delete(req, res) {
   const receiver = await Receiver.findOne({
     _id: req.body._id,
-  }).lean().exec();
+  })
+    .lean()
+    .exec();
   if (!receiver) {
     res.status(404);
     res.end();
@@ -53,7 +59,9 @@ async function _delete(req, res) {
   const _event = await Event.findOne({
     _id: mongoose.Types.ObjectId(receiver.eventId),
     user: mongoose.Types.ObjectId(req.user._id),
-  }).lean().exec();
+  })
+    .lean()
+    .exec();
   if (!_event) {
     res.status(401);
     res.send('Unable to find associated event, or not authorized');
@@ -75,7 +83,9 @@ async function loadReceivers(req, res) {
   const _event = await Event.findOne({
     _id: mongoose.Types.ObjectId(req.query.eventId),
     user: mongoose.Types.ObjectId(req.user._id),
-  }).lean().exec();
+  })
+    .lean()
+    .exec();
   if (!_event) {
     res.status(401);
     res.send('Event owned by requesting user does not exist.');
@@ -83,6 +93,8 @@ async function loadReceivers(req, res) {
   }
   const receivers = await Receiver.find({
     eventId: mongoose.Types.ObjectId(req.query.eventId),
-  }).lean().exec();
+  })
+    .lean()
+    .exec();
   res.json(receivers);
 }
