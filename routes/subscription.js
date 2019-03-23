@@ -47,16 +47,23 @@ async function create(req, res) {
     const verificationRes = await axios.post(IOS_VERIFICATION_LIVE, {
       'receipt-data': req.body.receiptData,
     });
+    const sandboxVerificationRes = await axios.post(IOS_VERIFICATION_SANDBOX, {
+      'receipt-data': req.body.receiptData,
+    });
     // receipt.in_app contains an array of purchases
-    if (verificationRes.data.status !== 0) {
+    // Apple sends all the receipts on device
+    // Make sure to process all of them and add them
+    // The one furthest in the future will automatically be the active one
+    let receipt;
+    if (verificationRes.data.status === 0) {
+      receipt = verificationRes.data.receipt;
+    } else if (sandboxVerificationRes.data.status === 0) {
+      receipt = sandboxVerificationRes.data.receipt;
+    } else {
       res.status(400);
       res.send('Error validating iOS purchase receipt');
       return;
     }
-    // Apple sends all the receipts on device
-    // Make sure to process all of them and add them
-    // The one furthest in the future will automatically be the active one
-    const { receipt } = verificationRes.data;
     await Promise.all(
       receipt.in_app.map((purchase) =>
         Subscription.findOne({
