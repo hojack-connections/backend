@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
+const mongoose = require('mongoose')
+const { Schema } = mongoose
 
 const EventSchema = new Schema(
   {
@@ -61,6 +61,6 @@ const EventSchema = new Schema(
   {
     collection: 'events',
   }
-);
+)
 
-mongoose.model('Events', EventSchema);
+mongoose.model('Events', EventSchema)

@@ -1,48 +1,48 @@
-const mongoose = require('mongoose');
-const Receiver = mongoose.model('Receivers');
-const Event = mongoose.model('Events');
-const auth = require('../middleware/auth');
-const asyncHandler = require('express-async-handler');
-const emailValidator = require('email-validator');
+const mongoose = require('mongoose')
+const Receiver = mongoose.model('Receivers')
+const Event = mongoose.model('Events')
+const auth = require('../middleware/auth')
+const asyncHandler = require('express-async-handler')
+const emailValidator = require('email-validator')
 
 module.exports = (app) => {
-  app.post('/receivers', auth, asyncHandler(create));
-  app.delete('/receivers', auth, asyncHandler(_delete));
-  app.get('/events/receivers', auth, asyncHandler(loadReceivers));
-};
+  app.post('/receivers', auth, asyncHandler(create))
+  app.delete('/receivers', auth, asyncHandler(_delete))
+  app.get('/events/receivers', auth, asyncHandler(loadReceivers))
+}
 
 async function create(req, res) {
   if (!emailValidator.validate(req.body.email)) {
-    res.status(400);
-    res.send('Invalid email supplied.');
-    return;
+    res.status(400)
+    res.send('Invalid email supplied.')
+    return
   }
   const duplicate = await Receiver.findOne({
     eventId: req.body.eventId,
     email: req.body.email,
   })
     .lean()
-    .exec();
+    .exec()
   if (duplicate) {
-    res.status(400);
-    res.send('This email is already a receiver for this event');
-    return;
+    res.status(400)
+    res.send('This email is already a receiver for this event')
+    return
   }
   const _event = await Event.findOne({
     _id: req.body.eventId,
     user: mongoose.Types.ObjectId(req.user._id),
   })
     .lean()
-    .exec();
+    .exec()
   if (!_event) {
-    res.status(401);
-    res.send('Unable to find event or not authorized');
-    return;
+    res.status(401)
+    res.send('Unable to find event or not authorized')
+    return
   }
   const created = await Receiver.create({
     ...req.body,
-  });
-  res.json(created);
+  })
+  res.json(created)
 }
 
 async function _delete(req, res) {
@@ -50,33 +50,33 @@ async function _delete(req, res) {
     _id: req.body._id,
   })
     .lean()
-    .exec();
+    .exec()
   if (!receiver) {
-    res.status(404);
-    res.end();
-    return;
+    res.status(404)
+    res.end()
+    return
   }
   const _event = await Event.findOne({
     _id: mongoose.Types.ObjectId(receiver.eventId),
     user: mongoose.Types.ObjectId(req.user._id),
   })
     .lean()
-    .exec();
+    .exec()
   if (!_event) {
-    res.status(401);
-    res.send('Unable to find associated event, or not authorized');
-    return;
+    res.status(401)
+    res.send('Unable to find associated event, or not authorized')
+    return
   }
   const deleted = await Receiver.deleteOne({
     _id: req.body._id,
-  }).exec();
+  }).exec()
   if (deleted.n !== 1) {
-    res.status(500);
-    res.send('No documents deleted.');
-    return;
+    res.status(500)
+    res.send('No documents deleted.')
+    return
   }
-  res.status(204);
-  res.end();
+  res.status(204)
+  res.end()
 }
 
 async function loadReceivers(req, res) {
@@ -85,16 +85,16 @@ async function loadReceivers(req, res) {
     user: mongoose.Types.ObjectId(req.user._id),
   })
     .lean()
-    .exec();
+    .exec()
   if (!_event) {
-    res.status(401);
-    res.send('Event owned by requesting user does not exist.');
-    return;
+    res.status(401)
+    res.send('Event owned by requesting user does not exist.')
+    return
   }
   const receivers = await Receiver.find({
     eventId: mongoose.Types.ObjectId(req.query.eventId),
   })
     .lean()
-    .exec();
-  res.json(receivers);
+    .exec()
+  res.json(receivers)
 }

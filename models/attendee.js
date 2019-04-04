@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
+const mongoose = require('mongoose')
+const { Schema } = mongoose
 
 const AttendeeSchema = new Schema(
   {
@@ -42,6 +42,6 @@ const AttendeeSchema = new Schema(
   {
     collection: 'attendees',
   }
-);
+)
 
-mongoose.model('Attendees', AttendeeSchema);
+mongoose.model('Attendees', AttendeeSchema)

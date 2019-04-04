@@ -4,3 +4,4 @@ node_modules/
 *.swp
 .env
 now-secrets.json
+images.js

@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { Schema } = mongoose;
+const mongoose = require('mongoose')
+const { Schema } = mongoose
 
 const SubscriptionSchema = new Schema(
   {
@@ -33,6 +33,6 @@ const SubscriptionSchema = new Schema(
   {
     collection: 'subscriptions',
   }
-);
+)
 
-mongoose.model('Subscriptions', SubscriptionSchema);
+mongoose.model('Subscriptions', SubscriptionSchema)

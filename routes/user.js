@@ -1,48 +1,48 @@
-const mongoose = require('mongoose');
-const User = mongoose.model('Users');
-const Event = mongoose.model('Events');
-const auth = require('../middleware/auth');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const emailValidator = require('email-validator');
-const asyncHandler = require('express-async-handler');
+const mongoose = require('mongoose')
+const User = mongoose.model('Users')
+const Event = mongoose.model('Events')
+const auth = require('../middleware/auth')
+const jwt = require('jsonwebtoken')
+const bcrypt = require('bcrypt')
+const emailValidator = require('email-validator')
+const asyncHandler = require('express-async-handler')
 
 module.exports = (app) => {
-  app.post('/users/login', asyncHandler(login));
-  app.get('/users/events', auth, asyncHandler(events));
-  app.get('/users', asyncHandler(getUser));
-  app.post('/users', asyncHandler(signup));
-  app.get('/users/authenticated', auth, asyncHandler(authenticated));
-};
+  app.post('/users/login', asyncHandler(login))
+  app.get('/users/events', auth, asyncHandler(events))
+  app.get('/users', asyncHandler(getUser))
+  app.post('/users', asyncHandler(signup))
+  app.get('/users/authenticated', auth, asyncHandler(authenticated))
+}
 
 /**
  * Create a new User record and store in database
  **/
 async function signup(req, res) {
   if (!emailValidator.validate(req.body.email)) {
-    res.status(400);
-    res.send('Invalid email supplied.');
-    return;
+    res.status(400)
+    res.send('Invalid email supplied.')
+    return
   }
   const emailCount = await User.countDocuments({
     email: {
       $regex: new RegExp(`^${req.body.email}$`, 'i'),
     },
-  }).exec();
+  }).exec()
   if (emailCount > 0) {
-    res.status(400);
-    res.send('This email is already registered. Please try another or login.');
-    return;
+    res.status(400)
+    res.send('This email is already registered. Please try another or login.')
+    return
   }
   if (!req.body.password || req.body.password.length < 5) {
-    res.status(400);
-    res.send('Please make sure your password is at least 5 character.');
-    return;
+    res.status(400)
+    res.send('Please make sure your password is at least 5 character.')
+    return
   }
-  const salt = await bcrypt.genSalt(10);
-  const passwordHash = await bcrypt.hash(req.body.password, salt);
-  const created = await User.create({ ...req.body, passwordHash });
-  res.json(created);
+  const salt = await bcrypt.genSalt(10)
+  const passwordHash = await bcrypt.hash(req.body.password, salt)
+  const created = await User.create({ ...req.body, passwordHash })
+  res.json(created)
 }
 
 /**
@@ -53,20 +53,20 @@ async function login(req, res) {
     email: req.body.email,
   })
     .lean()
-    .exec();
+    .exec()
   if (!user) {
-    res.status(400);
-    res.send('Email not found.');
-    return;
+    res.status(400)
+    res.send('Email not found.')
+    return
   }
   const isPasswordMatch = await bcrypt.compare(
     req.body.password,
     user.passwordHash
-  );
+  )
   if (!isPasswordMatch) {
-    res.status(401);
-    res.send('There was a problem authenticating.');
-    return;
+    res.status(401)
+    res.send('There was a problem authenticating.')
+    return
   }
   const token = jwt.sign(
     {
@@ -75,8 +75,8 @@ async function login(req, res) {
       passwordHash: '',
     },
     process.env.WEB_TOKEN_SECRET
-  );
-  res.json({ token });
+  )
+  res.json({ token })
 }
 
 /**
@@ -87,14 +87,14 @@ async function getUser(req, res) {
     email: req.query.email,
   })
     .lean()
-    .exec();
+    .exec()
   if (!user) {
-    res.status(404);
-    res.send('Email not found.');
-    return;
+    res.status(404)
+    res.send('Email not found.')
+    return
   }
-  delete user.passwordHash;
-  res.json(user);
+  delete user.passwordHash
+  res.json(user)
 }
 
 /**
@@ -105,8 +105,8 @@ async function events(req, res) {
     user: req.user._id,
   })
     .lean()
-    .exec();
-  res.json(events);
+    .exec()
+  res.json(events)
 }
 
 async function authenticated(req, res) {
@@ -114,6 +114,6 @@ async function authenticated(req, res) {
     _id: mongoose.Types.ObjectId(req.user._id),
   })
     .lean()
-    .exec();
-  res.json(user);
+    .exec()
+  res.json(user)
 }
