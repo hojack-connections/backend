@@ -19,6 +19,10 @@ const UserSchema = new Schema(
       type: String,
       required: true,
     },
+    title: {
+      type: String,
+      required: false,
+    },
   },
   {
     collection: 'users',

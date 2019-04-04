@@ -12,6 +12,7 @@ module.exports = (app) => {
   app.get('/users/events', auth, asyncHandler(events))
   app.get('/users', asyncHandler(getUser))
   app.post('/users', asyncHandler(signup))
+  app.put('/users', auth, asyncHandler(update))
   app.get('/users/authenticated', auth, asyncHandler(authenticated))
 }
 
@@ -79,6 +80,18 @@ async function login(req, res) {
   res.json({ token })
 }
 
+/**
+ * Update a user model
+ **/
+async function update(req, res) {
+  await User.updateOne(
+    {
+      _id: mongoose.Types.ObjectId(req.user._id),
+    },
+    req.body
+  ).exec()
+  res.status(204).end()
+}
 /**
  * Retrieve a user by email
  **/
