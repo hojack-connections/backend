@@ -39,16 +39,20 @@ async function create(req, res) {
     'base64'
   );
   const imageKey = uuid.v4();
-  await s3.putObject({
-    Key: imageKey,
-    Body: buffer,
-    ContentType: 'image/png',
-    ContentEncoding: 'base64',
-  }).promise();
+  await s3
+    .putObject({
+      Key: imageKey,
+      Body: buffer,
+      ContentType: 'image/png',
+      ContentEncoding: 'base64',
+    })
+    .promise();
   const created = await Attendee.create({
     ...req.body,
     user: req.user._id,
-    signature: `https://${process.env.CLIENT_BUCKET}.s3.${process.env.CLIENT_AWS_REGION}.amazonaws.com/${imageKey}`,
+    signature: `https://${process.env.CLIENT_BUCKET}.s3.${
+      process.env.CLIENT_AWS_REGION
+    }.amazonaws.com/${imageKey}`,
   });
   res.json(created);
 }
