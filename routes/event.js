@@ -224,7 +224,16 @@ async function submit(req, res) {
     const promises = [
       ...attendees.map((_attendee) => {
         if (_attendee.receivedCertificate) return Promise.resolve()
-        return _sendCertificate(doc, _attendee)
+        return _sendCertificate(doc, _attendee).then(() =>
+          Attendee.updateOne(
+            {
+              _id: mongoose.Types.ObjectId(_attendee._id),
+            },
+            {
+              receivedCertificate: true,
+            }
+          )
+        )
       }),
     ]
     await Promise.all(promises)
@@ -236,14 +245,6 @@ async function submit(req, res) {
     },
     {
       isSubmitted: true,
-    }
-  )
-  await Attendee.updateMany(
-    {
-      event: doc._id,
-    },
-    {
-      receivedCertificate: true,
     }
   )
   res.status(204)
