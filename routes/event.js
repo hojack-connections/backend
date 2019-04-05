@@ -210,13 +210,26 @@ async function submit(req, res) {
     .lean()
     .exec()
 
-  await Promise.all([
-    sendSummary(doc, attendees, receivers.map((r) => r.email)),
-    ...attendees.map((_attendee) => {
-      if (_attendee.receivedCertificate) return Promise.resolve()
-      return _sendCertificate(doc, _attendee)
-    }),
-  ])
+  /**
+   * Send summary by default, specify `sendSummary` as 0 to not send
+   **/
+  if (req.body.sendSummary !== false) {
+    await sendSummary(doc, attendees, receivers.map((r) => r.email))
+  }
+
+  /**
+   * Send certificates by default, specify `sendCertificates` as 0 to not send
+   **/
+  if (req.body.sendCertificates !== false) {
+    const promises = [
+      ...attendees.map((_attendee) => {
+        if (_attendee.receivedCertificate) return Promise.resolve()
+        return _sendCertificate(doc, _attendee)
+      }),
+    ]
+    await Promise.all(promises)
+  }
+
   await Event.updateOne(
     {
       _id: doc._id,
