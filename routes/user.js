@@ -115,8 +115,11 @@ async function getUser(req, res) {
  **/
 async function events(req, res) {
   const events = await Event.find({
-    user: req.user._id,
+    user: mongoose.Types.ObjectId(req.user._id),
   })
+    .sort({
+      date: 1,
+    })
     .lean()
     .exec()
   res.json(events)
