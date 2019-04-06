@@ -141,6 +141,9 @@ async function getAttendees(req, res) {
   const attendees = await Attendee.find({
     event: req.query.eventId,
   })
+    .sort({
+      firstname: 1,
+    })
     .lean()
     .exec()
   res.json(attendees)

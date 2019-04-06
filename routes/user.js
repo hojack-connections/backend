@@ -118,7 +118,7 @@ async function events(req, res) {
     user: mongoose.Types.ObjectId(req.user._id),
   })
     .sort({
-      date: 1,
+      name: 1,
     })
     .lean()
     .exec()

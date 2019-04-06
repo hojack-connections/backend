@@ -144,6 +144,9 @@ async function loadAttendees(req, res) {
       $in: userEvents.map((e) => e._id),
     },
   })
+    .sort({
+      firstname: 1,
+    })
     .lean()
     .exec()
   res.json(attendees)
