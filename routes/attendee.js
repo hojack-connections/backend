@@ -28,40 +28,7 @@ module.exports = (app) => {
   app.get('/attendees/certificate', asyncHandler(downloadCertificate))
 }
 
-async function downloadCertificate(req, res) {
-  const { eventId, attendeeId } = req.query
-  if (!eventId || !attendeeId) {
-    res.status(400).json({
-      message: 'No eventId or attendeeId supplied in query params',
-    })
-    return
-  }
-  const [_event, attendee] = await Promise.all([
-    Event.findOne({
-      _id: mongoose.Types.ObjectId(eventId),
-    })
-      .lean()
-      .exec(),
-    Attendee.findOne({
-      _id: mongoose.Types.ObjectId(attendeeId),
-    })
-      .lean()
-      .exec(),
-  ])
-  if (!_event) {
-    res.status(404).json({
-      message: 'Unable to find supplied eventId',
-    })
-    return
-  }
-  if (!attendee) {
-    res.status(404).json({
-      message: 'Unable to find supplied attendeeId',
-    })
-    return
-  }
-  res.setHeader('Content-Type', 'application/pdf')
-  // res.setHeader('Content-Disposition', 'attachment; filename=certificate.pdf')
+const generateCertificate = (_event, attendee) => {
   const doc = new PDFDocument()
   // Defined here: https://github.com/foliojs/pdfkit/blob/b13423bf0a391ed1c33a2e277bc06c00cabd6bf9/lib/page.coffee#L72-L122
   const LETTER_WIDTH = 612
@@ -154,7 +121,46 @@ async function downloadCertificate(req, res) {
   )
   doc.fontSize(13).text()
   doc.end()
-  doc.pipe(res)
+  return doc
+}
+
+module.exports.generateCertificate = generateCertificate
+
+async function downloadCertificate(req, res) {
+  const { eventId, attendeeId } = req.query
+  if (!eventId || !attendeeId) {
+    res.status(400).json({
+      message: 'No eventId or attendeeId supplied in query params',
+    })
+    return
+  }
+  const [_event, attendee] = await Promise.all([
+    Event.findOne({
+      _id: mongoose.Types.ObjectId(eventId),
+    })
+      .lean()
+      .exec(),
+    Attendee.findOne({
+      _id: mongoose.Types.ObjectId(attendeeId),
+    })
+      .lean()
+      .exec(),
+  ])
+  if (!_event) {
+    res.status(404).json({
+      message: 'Unable to find supplied eventId',
+    })
+    return
+  }
+  if (!attendee) {
+    res.status(404).json({
+      message: 'Unable to find supplied attendeeId',
+    })
+    return
+  }
+  res.setHeader('Content-Type', 'application/pdf')
+  // res.setHeader('Content-Disposition', 'attachment; filename=certificate.pdf')
+  generateCertificate(_event, attendee).pipe(res)
 }
 
 /**

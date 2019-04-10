@@ -8,6 +8,8 @@ const asyncHandler = require('express-async-handler')
 const AWS = require('aws-sdk')
 const mandrill = require('mandrill-api/mandrill')
 const mandrillClient = new mandrill.Mandrill(process.env.MANDRILL_API_KEY)
+const { generateCertificate } = require('./attendee')
+const getRawBody = require('raw-body')
 
 AWS.config = {
   accessKeyId: process.env.CLIENT_ACCESS_KEY_ID,
@@ -307,17 +309,28 @@ function sendSummary(_event, attendees, emails) {
   })
 }
 
-function _sendCertificate(_event, attendee, email) {
+async function _sendCertificate(_event, attendee, email) {
+  const pdfCertificate = await getRawBody(generateCertificate(_event, attendee))
   const date = new Date(_event.date)
   const certTemplateData = {
     key: process.env.MANDRILL_API_KEY,
     template_content: [],
+    template_name: 'Certificate Template',
     message: {
+      to: [{ email: email || attendee.email }],
+      subject: 'CERTIFICATE OF COURSE COMPLETION',
+      from_email: 'support@hojackconnections.com',
       auto_text: true,
       inline_css: true,
       merge: true,
       merge_language: 'mailchimp',
-      to: [{ email: email || attendee.email }],
+      attachments: [
+        {
+          type: 'application/pdf',
+          name: 'certificate.pdf',
+          content: pdfCertificate.toString('base64'),
+        },
+      ],
       global_merge_vars: [
         {
           name: 'FNAME',
@@ -358,14 +371,14 @@ function _sendCertificate(_event, attendee, email) {
           content: _event.numberOfCourseCredits,
         },
       ],
-      subject: 'CERTIFICATE OF COURSE COMPLETION',
-      from_email: 'support@hojackconnections.com',
     },
-    template_name: 'Certificate Template',
   }
-  return new Promise((rs, rj) => {
+  return await new Promise((rs, rj) => {
     mandrillClient.messages.sendTemplate(certTemplateData, (results) => {
-      if (results.filter((r) => r.status !== 'sent').length) rj(results)
+      if (
+        results.filter((r) => r.status !== 'sent' && r.status !== 'queued')
+          .length
+      ) rj(results)
       else rs()
     })
   })
