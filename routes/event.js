@@ -303,7 +303,10 @@ function sendSummary(_event, attendees, emails) {
   }
   return new Promise((rs, rj) => {
     mandrillClient.messages.sendTemplate(sheetTemplateData, (results) => {
-      if (results.filter((r) => r.status !== 'sent').length) rj(results)
+      if (
+        results.filter((r) => r.status !== 'sent' && r.status !== 'queued')
+          .length
+      ) rj(results)
       else rs()
     })
   })
