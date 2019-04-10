@@ -7,6 +7,7 @@ const AWS = require('aws-sdk')
 const uuid = require('uuid')
 const PDFDocument = require('pdfkit')
 const moment = require('moment')
+const path = require('path')
 
 AWS.config = {
   accessKeyId: process.env.CLIENT_AWS_ACCESS_KEY_ID,
@@ -33,7 +34,8 @@ const generateCertificate = (_event, attendee) => {
   // Defined here: https://github.com/foliojs/pdfkit/blob/b13423bf0a391ed1c33a2e277bc06c00cabd6bf9/lib/page.coffee#L72-L122
   const LETTER_WIDTH = 612
   const imageWidth = 500
-  doc.image('assets/certificateHeader.jpg', {
+  const imagePath = path.join(__dirname, '../assets/certificateHeader.jpg')
+  doc.image(imagePath, {
     x: LETTER_WIDTH / 2 - imageWidth / 2,
     width: imageWidth,
     align: 'center',
