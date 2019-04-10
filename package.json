@@ -32,8 +32,10 @@
     "express-async-handler": "^1.1.4",
     "jsonwebtoken": "^8.5.0",
     "mandrill-api": "^1.0.45",
+    "moment": "^2.24.0",
     "mongoose": "^5.4.18",
     "now-env": "^3.1.0",
+    "pdfkit": "^0.9.0",
     "uuid": "^3.3.2"
   },
   "devDependencies": {

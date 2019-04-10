@@ -5,6 +5,8 @@ const auth = require('../middleware/auth')
 const asyncHandler = require('express-async-handler')
 const AWS = require('aws-sdk')
 const uuid = require('uuid')
+const PDFDocument = require('pdfkit')
+const moment = require('moment')
 
 AWS.config = {
   accessKeyId: process.env.CLIENT_AWS_ACCESS_KEY_ID,
@@ -23,6 +25,136 @@ module.exports = (app) => {
   app.delete('/attendees', auth, asyncHandler(_delete))
   app.put('/attendees', auth, asyncHandler(update))
   app.get('/attendees', auth, asyncHandler(loadAttendees))
+  app.get('/attendees/certificate', asyncHandler(downloadCertificate))
+}
+
+async function downloadCertificate(req, res) {
+  const { eventId, attendeeId } = req.query
+  if (!eventId || !attendeeId) {
+    res.status(400).json({
+      message: 'No eventId or attendeeId supplied in query params',
+    })
+    return
+  }
+  const [_event, attendee] = await Promise.all([
+    Event.findOne({
+      _id: mongoose.Types.ObjectId(eventId),
+    })
+      .lean()
+      .exec(),
+    Attendee.findOne({
+      _id: mongoose.Types.ObjectId(attendeeId),
+    })
+      .lean()
+      .exec(),
+  ])
+  if (!_event) {
+    res.status(404).json({
+      message: 'Unable to find supplied eventId',
+    })
+    return
+  }
+  if (!attendee) {
+    res.status(404).json({
+      message: 'Unable to find supplied attendeeId',
+    })
+    return
+  }
+  res.setHeader('Content-Type', 'application/pdf')
+  // res.setHeader('Content-Disposition', 'attachment; filename=certificate.pdf')
+  const doc = new PDFDocument()
+  // Defined here: https://github.com/foliojs/pdfkit/blob/b13423bf0a391ed1c33a2e277bc06c00cabd6bf9/lib/page.coffee#L72-L122
+  const LETTER_WIDTH = 612
+  const imageWidth = 500
+  doc.image('assets/certificateHeader.jpg', {
+    x: LETTER_WIDTH / 2 - imageWidth / 2,
+    width: imageWidth,
+    align: 'center',
+  })
+  doc.moveDown(2)
+  doc.font('Times-Roman')
+  doc.fontSize(20).text('CERTIFICATE OF COURSE COMPLETION', {
+    align: 'center',
+  })
+  // Draw multiple sections of text in a centered fashion
+  const centered = (...textOptions) => {
+    // Keep track of the original document X position
+    const originalX = doc.x
+    const textMeasurements = []
+    let totalWidth = 0
+    for (let x = 0; x < textOptions.length; x += 1) {
+      const { text, options } = textOptions[x]
+      const width = doc.widthOfString(text, options)
+      textMeasurements.push(width)
+      totalWidth += width
+    }
+    let currentX = LETTER_WIDTH / 2 - totalWidth / 2
+    for (let x = 0; x < textOptions.length; x += 1) {
+      const { text, options } = textOptions[x]
+      doc.text(text, currentX, doc.y, options)
+      if (x >= textOptions.length - 1) continue
+      doc.moveUp()
+      currentX += textMeasurements[x]
+    }
+    // Reset the document X position
+    doc.text('', originalX, doc.y)
+  }
+  doc.fontSize(15)
+  centered(
+    { text: 'This certifies that ' },
+    {
+      text: `${attendee.firstname} ${attendee.lastname}`,
+      options: { underline: true },
+    },
+    { text: ' has completed ' }
+  )
+  doc.moveDown()
+  doc.fontSize(20).text(_event.name, {
+    align: 'center',
+  })
+  if (_event.presenterName) {
+    doc.moveDown()
+    doc.fontSize(13)
+    centered({ text: 'Presented by: ' }, { text: _event.presenterName })
+  }
+  if (_event.trainingProvider) {
+    doc.moveDown()
+    doc.fontSize(13).text(`Training provider: ${_event.trainingProvider}`, {
+      align: 'center',
+    })
+  }
+  if (_event.numberOfCourseCredits) {
+    const hours = _event.numberOfCourseCredits
+    doc.moveDown()
+    doc
+      .fontSize(13)
+      .text(`${hours} Professional Development Hour${hours === 1 ? '' : 's'}`, {
+        align: 'center',
+      })
+  }
+  doc.moveDown()
+  doc
+    .fontSize(13)
+    .font('Times-Bold')
+    .text(
+      'Professional Engineering, Land Surveying, Architecture, Landscape Architecture'
+    )
+    .font('Times-Roman')
+  doc.moveDown()
+  centered(
+    {
+      text: 'Date & Location: ',
+    },
+    {
+      text: `${moment(_event.date).format('M/D/YYYY')} at ${_event.address}`,
+      options: {
+        underline: true,
+      },
+    }
+  )
+  doc.fontSize(13).text()
+  doc.end()
+  doc.pipe(res)
 }
 
 /**

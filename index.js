@@ -10,7 +10,6 @@ const secret = require('./middleware/secret')
 const app = express()
 
 app.use(express.json())
-app.use(secret)
 
 /**
  * Establish a connection to the mongo database, then continue the request
@@ -26,6 +25,7 @@ app.use(
 )
 
 require('./routes/attendee')(app)
+app.use(secret)
 require('./routes/event')(app)
 require('./routes/user')(app)
 require('./routes/subscription')(app)
