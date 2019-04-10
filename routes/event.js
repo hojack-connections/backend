@@ -10,6 +10,7 @@ const mandrill = require('mandrill-api/mandrill')
 const mandrillClient = new mandrill.Mandrill(process.env.MANDRILL_API_KEY)
 const { generateCertificate } = require('./attendee')
 const getRawBody = require('raw-body')
+const moment = require('moment')
 
 AWS.config = {
   accessKeyId: process.env.CLIENT_ACCESS_KEY_ID,
@@ -266,7 +267,7 @@ function sendSummary(_event, attendees, emails) {
       merge: true,
       merge_language: 'handlebars',
       to: emails.map((email) => ({ email })),
-      subject: 'ATTENDANCE SUMMARY',
+      subject: `ATTENDANCE SUMMARY - ${_event.name}`,
       global_merge_vars: [
         {
           name: 'courseNo',
@@ -295,6 +296,14 @@ function sendSummary(_event, attendees, emails) {
         {
           name: 'attendees',
           content: attendees,
+        },
+        {
+          name: 'TDATE',
+          content: moment(_event.date).format('M/D/YYYY'),
+        },
+        {
+          name: 'TRAININGP',
+          content: _event.trainingProvider,
         },
       ],
       from_email: 'support@hojackconnections.com',
