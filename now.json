@@ -9,7 +9,8 @@
     "MANDRILL_API_KEY": "@mandrill-api-key",
     "CLIENT_AWS_REGION": "us-west-2",
     "CLIENT_BUCKET": "certifio",
-    "APP_SECRET": "@app-secret"
+    "APP_SECRET": "@app-secret",
+    "ITUNES_APP_SECRET": "@itunes-app-secret"
   },
   "builds": [{ "src": "index.js", "use": "@now/node" }],
   "routes": [

@@ -44,21 +44,27 @@ async function create(req, res) {
     })
     await status(req, res)
   } else if (req.body.platform === 'ios') {
-    const verificationRes = await axios.post(IOS_VERIFICATION_LIVE, {
-      'receipt-data': req.body.receiptData,
-    })
-    const sandboxVerificationRes = await axios.post(IOS_VERIFICATION_SANDBOX, {
-      'receipt-data': req.body.receiptData,
-    })
+    const { data: liveVerification } = await axios
+      .post(IOS_VERIFICATION_LIVE, {
+        'receipt-data': req.body.receiptData,
+        password: process.env.ITUNES_APP_SECRET,
+      })
+      .catch(() => ({ data: {} }))
+    const { data: sandboxVerification } = await axios
+      .post(IOS_VERIFICATION_SANDBOX, {
+        'receipt-data': req.body.receiptData,
+        password: process.env.ITUNES_APP_SECRET,
+      })
+      .catch(() => ({ data: {} }))
     // receipt.in_app contains an array of purchases
     // Apple sends all the receipts on device
     // Make sure to process all of them and add them
     // The one furthest in the future will automatically be the active one
     let receipt
-    if (verificationRes.data.status === 0) {
-      receipt = verificationRes.data.receipt
-    } else if (sandboxVerificationRes.data.status === 0) {
-      receipt = sandboxVerificationRes.data.receipt
+    if (liveVerification.status === 0) {
+      receipt = liveVerification.receipt
+    } else if (sandboxVerification.status === 0) {
+      receipt = sandboxVerification.receipt
     } else {
       res.status(400)
       res.send('Error validating iOS purchase receipt')
@@ -71,6 +77,7 @@ async function create(req, res) {
           transactionId: purchase.transaction_id,
         }).then((doc) => {
           if (doc) return
+          if (!productIdMap[purchase.product_id]) return
           return Subscription.create({
             ...req.body,
             userId: req.user._id,
